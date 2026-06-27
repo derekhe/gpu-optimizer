@@ -60,7 +60,7 @@ public class RegistryGpuPreferenceServiceTests
             Assert.True(restore.AllSucceeded);
             Assert.Single(restore.Items);
             Assert.True(restore.Items[0].Success);
-            Assert.Equal("Deleted preference value", restore.Items[0].Message);
+            Assert.Equal("Reset to SystemDefault", restore.Items[0].Message);
             Assert.Null(GetRawPreference(context.SubKey, exePath));
             var backupAfterRestore = ReadBackup(context.BackupFilePath);
             Assert.False(backupAfterRestore.OriginalValues.ContainsKey(exePath));
@@ -133,20 +133,44 @@ public class RegistryGpuPreferenceServiceTests
     }
 
     [Fact]
-    public async Task RestoreWithoutBackup_ReturnsFailureItem()
+    public async Task RestoreWithoutBackup_DeletesCurrentValue()
     {
         var context = CreateTestContext();
         try
         {
             var exePath = @"C:\Program Files\GpuOptimizer\NoBackup.exe";
+            SetRawPreference(context.SubKey, exePath, "GpuPreference=1;");
             var service = CreateService(context);
 
             var restore = await service.RestoreAsync(new[] { exePath });
 
-            Assert.False(restore.AllSucceeded);
+            Assert.True(restore.AllSucceeded);
             var item = Assert.Single(restore.Items);
-            Assert.False(item.Success);
-            Assert.Equal("No backup record for this app", item.Message);
+            Assert.True(item.Success);
+            Assert.Equal("Reset to SystemDefault", item.Message);
+            Assert.Null(GetRawPreference(context.SubKey, exePath));
+        }
+        finally
+        {
+            Cleanup(context);
+        }
+    }
+
+    [Fact]
+    public async Task RestoreWithoutBackup_ReturnsSuccess_WhenAlreadySystemDefault()
+    {
+        var context = CreateTestContext();
+        try
+        {
+            var exePath = @"C:\Program Files\GpuOptimizer\NoBackupDefault.exe";
+            var service = CreateService(context);
+
+            var restore = await service.RestoreAsync(new[] { exePath });
+
+            Assert.True(restore.AllSucceeded);
+            var item = Assert.Single(restore.Items);
+            Assert.True(item.Success);
+            Assert.Equal("Already SystemDefault", item.Message);
         }
         finally
         {

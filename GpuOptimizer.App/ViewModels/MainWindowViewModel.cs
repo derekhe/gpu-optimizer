@@ -39,6 +39,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private double totalDedicatedMemoryMb;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplaySelectedSaving))]
+    private double selectedDiscreteMemoryMb;
+
+    public string DisplaySelectedSaving => $"Selected saving: {SelectedDiscreteMemoryMb:F1} MB";
+
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand OptimizeSelectedCommand { get; }
     public IAsyncRelayCommand RestoreSelectedCommand { get; }
@@ -171,6 +177,11 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedProcessCount = Processes.Count(process => process.IsSelected);
         OptimizableProcessCount = Processes.Count(process => process.IsOptimizable);
         TotalDedicatedMemoryMb = Processes.Sum(process => process.DedicatedMemoryMb);
+        SelectedDiscreteMemoryMb = Processes
+            .Where(process => process.IsSelected)
+            .SelectMany(process => process.AdapterMemoryUsage)
+            .Where(memory => GpuDisplayStyle.IsDiscreteGpu(memory.AdapterName))
+            .Sum(memory => memory.DedicatedMemoryMb);
         RebuildGpuMemorySummaries();
     }
 
@@ -182,7 +193,11 @@ public partial class MainWindowViewModel : ViewModelBase
             .Select(group => new GpuMemorySummaryViewModel
             {
                 GpuName = group.Key,
-                DedicatedMemoryMb = group.Sum(memory => memory.DedicatedMemoryMb)
+                DedicatedMemoryMb = group.Sum(memory => memory.DedicatedMemoryMb),
+                KindLabel = GpuDisplayStyle.GetKindLabel(group.Key),
+                AccentBrush = GpuDisplayStyle.GetAccentBrush(group.Key),
+                BackgroundBrush = GpuDisplayStyle.GetBackgroundBrush(group.Key),
+                BorderBrush = GpuDisplayStyle.GetBorderBrush(group.Key)
             })
             .OrderByDescending(summary => summary.DedicatedMemoryMb)
             .ThenBy(summary => summary.GpuName, StringComparer.OrdinalIgnoreCase)

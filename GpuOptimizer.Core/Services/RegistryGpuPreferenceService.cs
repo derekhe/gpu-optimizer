@@ -93,13 +93,39 @@ public sealed class RegistryGpuPreferenceService : IGpuPreferenceService
 
             if (!backup.OriginalValues.TryGetValue(path, out var original))
             {
-                items.Add(new PreferenceOperationItem
+                try
                 {
-                    ExecutablePath = path,
-                    Success = false,
-                    Message = "No backup record for this app"
-                });
-                allSucceeded = false;
+                    if (ReadRawValue(path) is null)
+                    {
+                        items.Add(new PreferenceOperationItem
+                        {
+                            ExecutablePath = path,
+                            Success = true,
+                            Message = "Already SystemDefault"
+                        });
+                    }
+                    else
+                    {
+                        DeleteValue(path);
+                        items.Add(new PreferenceOperationItem
+                        {
+                            ExecutablePath = path,
+                            Success = true,
+                            Message = "Reset to SystemDefault"
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    items.Add(new PreferenceOperationItem
+                    {
+                        ExecutablePath = path,
+                        Success = false,
+                        Message = ex.Message
+                    });
+                    allSucceeded = false;
+                }
+
                 continue;
             }
 
@@ -112,7 +138,7 @@ public sealed class RegistryGpuPreferenceService : IGpuPreferenceService
                     {
                         ExecutablePath = path,
                         Success = true,
-                        Message = "Deleted preference value"
+                        Message = "Reset to SystemDefault"
                     });
                 }
                 else

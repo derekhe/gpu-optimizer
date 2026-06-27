@@ -13,94 +13,149 @@
         MinHeight="600"
         Title="GPU Optimizer">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16">
-        <Border Grid.Row="0"
-                BorderBrush="#D9DCE1"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="12"
-                Background="#F8FAFC">
-            <StackPanel Spacing="4">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Margin="16">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Text="GPU Optimizer"
                            FontSize="18"
                            FontWeight="SemiBold"
                            Foreground="#1F2937" />
                 <TextBlock Text="{Binding StatusMessage}"
                            FontSize="11"
-                           Foreground="#4B5563"
+                           Foreground="#6B7280"
                            TextWrapping="Wrap" />
             </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1"
+                BorderBrush="#BFDBFE"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="10 8"
+                Margin="0 10 0 0"
+                Background="#EFF6FF">
+            <TextBlock Text="How it works: GPU Optimizer reads Windows GPU performance counters, including GPU Process Memory dedicated usage, and uses DXGI to map adapter IDs to real GPU names and integrated/discrete types. When you select apps and apply optimization, it writes the current user's Windows graphics preference under HKCU\Software\Microsoft\DirectX\UserGpuPreferences with GpuPreference=1, which asks Windows to use the power-saving GPU after the target apps are restarted. The result is lower discrete GPU memory pressure for apps that can run on the integrated GPU."
+                       FontSize="11"
+                       Foreground="#1E3A8A"
+                       TextWrapping="Wrap" />
         </Border>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0 10 0 0">
-            <Button Content="Refresh"
-                    Width="90"
-                    Height="30"
-                    Command="{Binding RefreshCommand}" />
-            <Button Content="Select"
-                    Width="84"
-                    Height="30"
-                    Command="{Binding SelectAllOptimizableCommand}" />
-            <Button Content="Optimize"
-                    Width="92"
-                    Height="30"
-                    Command="{Binding OptimizeSelectedCommand}" />
-            <Button Content="Restore"
-                    Width="92"
-                    Height="30"
-                    Command="{Binding RestoreSelectedCommand}" />
-        </StackPanel>
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="0 12 0 0">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <Button Content="Refresh"
+                        MinWidth="78"
+                        Height="30"
+                        Padding="12 1 12 3"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding RefreshCommand}" />
+                <Button Content="Select all"
+                        MinWidth="86"
+                        Height="30"
+                        Padding="12 1 12 3"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding SelectAllOptimizableCommand}" />
+                <Button Content="Optimize"
+                        MinWidth="88"
+                        Height="30"
+                        Padding="12 1 12 3"
+                        VerticalContentAlignment="Center"
+                        Background="#2563EB"
+                        Foreground="White"
+                        Command="{Binding OptimizeSelectedCommand}" />
+                <Button Content="Restore"
+                        MinWidth="82"
+                        Height="30"
+                        Padding="12 1 12 3"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding RestoreSelectedCommand}" />
+            </StackPanel>
 
-        <UniformGrid Grid.Row="2"
-                     Columns="4"
-                     Margin="0 10 0 0"
-                     HorizontalAlignment="Stretch">
-            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
-                <StackPanel Spacing="2">
-                    <TextBlock Text="Total" FontSize="11" Foreground="#6B7280" />
-                    <TextBlock Text="{Binding TotalProcessCount}" FontSize="18" FontWeight="SemiBold" />
-                </StackPanel>
-            </Border>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                <TextBlock Text="{Binding TotalProcessCount, StringFormat={}{0} processes}"
+                           FontSize="12"
+                           Foreground="#374151" />
+                <TextBlock Text="·" FontSize="12" Foreground="#9CA3AF" />
+                <TextBlock Text="{Binding SelectedProcessCount, StringFormat={}{0} selected}"
+                           FontSize="12"
+                           Foreground="#374151" />
+                <TextBlock Text="·" FontSize="12" Foreground="#9CA3AF" />
+                <TextBlock Text="{Binding OptimizableProcessCount, StringFormat={}{0} optimizable}"
+                           FontSize="12"
+                           Foreground="#374151" />
+                <TextBlock Text="·" FontSize="12" Foreground="#9CA3AF" />
+                <TextBlock Text="{Binding DisplaySelectedSaving}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="#EA580C" />
+            </StackPanel>
+        </Grid>
 
-            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
-                <StackPanel Spacing="2">
-                    <TextBlock Text="Selected" FontSize="11" Foreground="#6B7280" />
-                    <TextBlock Text="{Binding SelectedProcessCount}" FontSize="18" FontWeight="SemiBold" />
-                </StackPanel>
-            </Border>
-
-            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
-                <StackPanel Spacing="2">
-                    <TextBlock Text="Optimizable" FontSize="11" Foreground="#6B7280" />
-                    <TextBlock Text="{Binding OptimizableProcessCount}" FontSize="18" FontWeight="SemiBold" />
-                </StackPanel>
-            </Border>
-
-            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Memory MB" FontSize="11" Foreground="#6B7280" />
-                    <ItemsControl ItemsSource="{Binding GpuMemorySummaries}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:GpuMemorySummaryViewModel">
-                                <Grid ColumnDefinitions="*,Auto" Margin="0 1">
-                                    <TextBlock Text="{Binding GpuName}"
-                                               FontSize="11"
-                                               TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Grid.Column="1"
+        <Border Grid.Row="3"
+                BorderBrush="#E5E7EB"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="10 8"
+                Margin="0 10 0 0"
+                Background="#F8FAFC">
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0"
+                           Text="GPU Memory"
+                           FontSize="11"
+                           Foreground="#6B7280"
+                           VerticalAlignment="Center"
+                           Margin="0 0 14 0" />
+                <ItemsControl Grid.Column="1" ItemsSource="{Binding GpuMemorySummaries}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="10" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:GpuMemorySummaryViewModel">
+                            <Border BorderBrush="{Binding BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="0"
+                                    Background="{Binding BackgroundBrush}">
+                                <Grid ColumnDefinitions="4,Auto,Auto">
+                                    <Border Grid.Column="0"
+                                            Width="4"
+                                            Background="{Binding AccentBrush}"
+                                            CornerRadius="4 0 0 4" />
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="1"
+                                                Margin="8 4 0 4">
+                                        <TextBlock Text="{Binding GpuName}"
+                                                   FontSize="11"
+                                                   MaxWidth="260"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding KindLabel}"
+                                                   FontSize="10"
+                                                   Foreground="#6B7280"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2"
                                                Text="{Binding DisplayMemory}"
-                                               FontSize="11"
+                                               FontSize="12"
                                                FontWeight="SemiBold"
-                                               Margin="8 0 0 0" />
+                                               Foreground="{Binding AccentBrush}"
+                                               Margin="12 0 8 0"
+                                               VerticalAlignment="Center" />
                                 </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-        </UniformGrid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
 
         <DataGrid x:Name="ProcessGrid"
-                  Grid.Row="3"
+                  Grid.Row="4"
                   ItemsSource="{Binding Processes}"
                   AutoGenerateColumns="False"
                   SelectionMode="Extended"
@@ -137,7 +192,36 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="GPU" Binding="{Binding GpuAdapters}" Width="220" MinWidth="140" IsReadOnly="True" />
+                <DataGridTemplateColumn Header="GPU" Width="220" MinWidth="140" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ItemsControl ItemsSource="{Binding GpuBadges}" Margin="18 0 0 0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="4" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:GpuBadgeViewModel">
+                                        <Border BorderBrush="{Binding BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="6 1"
+                                                Background="{Binding BackgroundBrush}"
+                                                ToolTip.Tip="{Binding GpuName}">
+                                            <TextBlock Text="{Binding GpuName}"
+                                                       FontSize="11"
+                                                       Foreground="{Binding AccentBrush}"
+                                                       MaxWidth="190"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Memory" Binding="{Binding DedicatedMemoryMb, StringFormat={}{0:F1}}" Width="95" MinWidth="78" IsReadOnly="True" />
                 <DataGridTextColumn Header="Preference" Binding="{Binding CurrentPreference}" Width="110" MinWidth="96" IsReadOnly="True" />
             </DataGrid.Columns>

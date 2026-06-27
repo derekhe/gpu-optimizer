@@ -2,13 +2,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace GpuOptimizer.App.ViewModels;
 
-public partial class GpuMemorySummaryViewModel : ObservableObject
+public partial class GpuBadgeViewModel : ObservableObject
 {
     [ObservableProperty]
     private string gpuName = string.Empty;
-
-    [ObservableProperty]
-    private string kindLabel = string.Empty;
 
     [ObservableProperty]
     private string accentBrush = "#6B7280";
@@ -18,10 +15,4 @@ public partial class GpuMemorySummaryViewModel : ObservableObject
 
     [ObservableProperty]
     private string borderBrush = "#E5E7EB";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DisplayMemory))]
-    private double dedicatedMemoryMb;
-
-    public string DisplayMemory => $"{DedicatedMemoryMb:F1} MB";
 }
