@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:GpuOptimizer.App.ViewModels"
+        xmlns:loc="using:GpuOptimizer.App.Localization"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
@@ -11,50 +12,73 @@
         Height="720"
         MinWidth="960"
         MinHeight="600"
-        Title="GPU Optimizer">
+        Title="{DynamicResource AppTitle}">
 
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Margin="16">
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <StackPanel Grid.Column="0" Spacing="2">
-                <TextBlock Text="GPU Optimizer"
+                <TextBlock Text="{DynamicResource AppTitle}"
                            FontSize="18"
                            FontWeight="SemiBold"
-                           Foreground="#1F2937" />
+                           Foreground="{DynamicResource AppTextBrush}" />
                 <TextBlock Text="{Binding StatusMessage}"
                            FontSize="11"
-                           Foreground="#6B7280"
+                           Foreground="{DynamicResource AppMutedTextBrush}"
                            TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        VerticalAlignment="Top">
+                <TextBlock Text="{DynamicResource ThemeLabel}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppMutedTextBrush}"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{DynamicResource LanguageLabel}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppMutedTextBrush}"
+                           VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding Languages}"
+                          SelectedItem="{Binding SelectedLanguage}"
+                          Width="108"
+                          Height="28">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="loc:LanguageOption">
+                            <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
             </StackPanel>
         </Grid>
 
         <Border Grid.Row="1"
-                BorderBrush="#BFDBFE"
+                BorderBrush="{DynamicResource AppInfoBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="6"
                 Padding="10 8"
                 Margin="0 10 0 0"
-                Background="#EFF6FF">
-            <TextBlock Text="How it works: GPU Optimizer reads Windows GPU performance counters, including GPU Process Memory dedicated usage, and uses DXGI to map adapter IDs to real GPU names and integrated/discrete types. When you select apps and apply optimization, it writes the current user's Windows graphics preference under HKCU\Software\Microsoft\DirectX\UserGpuPreferences with GpuPreference=1, which asks Windows to use the power-saving GPU after the target apps are restarted. The result is lower discrete GPU memory pressure for apps that can run on the integrated GPU."
+                Background="{DynamicResource AppInfoBackgroundBrush}">
+            <TextBlock Text="{DynamicResource InfoText}"
                        FontSize="11"
-                       Foreground="#1E3A8A"
+                       Foreground="{DynamicResource AppInfoTextBrush}"
                        TextWrapping="Wrap" />
         </Border>
 
         <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="0 12 0 0">
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                <Button Content="Refresh"
+                <Button Content="{DynamicResource RefreshButton}"
                         MinWidth="78"
                         Height="30"
                         Padding="12 1 12 3"
                         VerticalContentAlignment="Center"
                         Command="{Binding RefreshCommand}" />
-                <Button Content="Select all"
+                <Button Content="{DynamicResource SelectAllButton}"
                         MinWidth="86"
                         Height="30"
                         Padding="12 1 12 3"
                         VerticalContentAlignment="Center"
                         Command="{Binding SelectAllOptimizableCommand}" />
-                <Button Content="Optimize"
+                <Button Content="{DynamicResource OptimizeButton}"
                         MinWidth="88"
                         Height="30"
                         Padding="12 1 12 3"
@@ -62,7 +86,7 @@
                         Background="#2563EB"
                         Foreground="White"
                         Command="{Binding OptimizeSelectedCommand}" />
-                <Button Content="Restore"
+                <Button Content="{DynamicResource RestoreButton}"
                         MinWidth="82"
                         Height="30"
                         Padding="12 1 12 3"
@@ -75,18 +99,18 @@
                         Spacing="8"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
-                <TextBlock Text="{Binding TotalProcessCount, StringFormat={}{0} processes}"
+                <TextBlock Text="{Binding DisplayTotalProcesses}"
                            FontSize="12"
-                           Foreground="#374151" />
-                <TextBlock Text="·" FontSize="12" Foreground="#9CA3AF" />
-                <TextBlock Text="{Binding SelectedProcessCount, StringFormat={}{0} selected}"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                <TextBlock Text="·" FontSize="12" Foreground="{DynamicResource AppSeparatorTextBrush}" />
+                <TextBlock Text="{Binding DisplaySelectedProcesses}"
                            FontSize="12"
-                           Foreground="#374151" />
-                <TextBlock Text="·" FontSize="12" Foreground="#9CA3AF" />
-                <TextBlock Text="{Binding OptimizableProcessCount, StringFormat={}{0} optimizable}"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                <TextBlock Text="·" FontSize="12" Foreground="{DynamicResource AppSeparatorTextBrush}" />
+                <TextBlock Text="{Binding DisplayOptimizableProcesses}"
                            FontSize="12"
-                           Foreground="#374151" />
-                <TextBlock Text="·" FontSize="12" Foreground="#9CA3AF" />
+                           Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                <TextBlock Text="·" FontSize="12" Foreground="{DynamicResource AppSeparatorTextBrush}" />
                 <TextBlock Text="{Binding DisplaySelectedSaving}"
                            FontSize="12"
                            FontWeight="SemiBold"
@@ -95,17 +119,17 @@
         </Grid>
 
         <Border Grid.Row="3"
-                BorderBrush="#E5E7EB"
+                BorderBrush="{DynamicResource AppPanelBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="6"
                 Padding="10 8"
                 Margin="0 10 0 0"
-                Background="#F8FAFC">
+                Background="{DynamicResource AppPanelBackgroundBrush}">
             <Grid ColumnDefinitions="Auto,*">
                 <TextBlock Grid.Column="0"
-                           Text="GPU Memory"
+                           Text="{DynamicResource GpuMemoryLabel}"
                            FontSize="11"
-                           Foreground="#6B7280"
+                           Foreground="{DynamicResource AppMutedTextBrush}"
                            VerticalAlignment="Center"
                            Margin="0 0 14 0" />
                 <ItemsControl Grid.Column="1" ItemsSource="{Binding GpuMemorySummaries}">
@@ -136,7 +160,7 @@
                                                    VerticalAlignment="Center" />
                                         <TextBlock Text="{Binding KindLabel}"
                                                    FontSize="10"
-                                                   Foreground="#6B7280"
+                                                   Foreground="{DynamicResource AppMutedTextBrush}"
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2"
@@ -172,7 +196,7 @@
                   CornerRadius="0 0 6 6"
                   DoubleTapped="ProcessGrid_DoubleTapped">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Select" Width="72" MinWidth="54">
+                <DataGridTemplateColumn Header="{DynamicResource SelectHeader}" Width="72" MinWidth="54">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <CheckBox IsChecked="{Binding IsSelected}"
@@ -181,7 +205,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Process Name" Width="2.2*" MinWidth="120" IsReadOnly="True">
+                <DataGridTemplateColumn Header="{DynamicResource ProcessNameHeader}" Width="2.2*" MinWidth="120" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding ProcessName}"
@@ -192,7 +216,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="GPU" Width="220" MinWidth="140" IsReadOnly="True">
+                <DataGridTemplateColumn Header="{DynamicResource GpuHeader}" Width="220" MinWidth="140" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <ItemsControl ItemsSource="{Binding GpuBadges}" Margin="18 0 0 0">
@@ -222,8 +246,8 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Memory" Binding="{Binding DedicatedMemoryMb, StringFormat={}{0:F1}}" Width="95" MinWidth="78" IsReadOnly="True" />
-                <DataGridTextColumn Header="Preference" Binding="{Binding CurrentPreference}" Width="110" MinWidth="96" IsReadOnly="True" />
+                <DataGridTextColumn Header="{DynamicResource MemoryHeader}" Binding="{Binding DedicatedMemoryMb, StringFormat={}{0:F1}}" Width="95" MinWidth="78" IsReadOnly="True" />
+                <DataGridTextColumn Header="{DynamicResource PreferenceHeader}" Binding="{Binding CurrentPreference}" Width="110" MinWidth="96" IsReadOnly="True" />
             </DataGrid.Columns>
         </DataGrid>
 

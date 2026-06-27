@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using GpuOptimizer.App.Localization;
 using GpuOptimizer.Core.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,6 +59,9 @@ public partial class GpuProcessRowViewModel : ObservableObject
     private string currentPreference = GpuPreferenceKind.Unknown.ToString();
 
     [ObservableProperty]
+    private GpuPreferenceKind currentPreferenceKind = GpuPreferenceKind.Unknown;
+
+    [ObservableProperty]
     private bool isOptimizable;
 
     [ObservableProperty]
@@ -79,5 +83,26 @@ public partial class GpuProcessRowViewModel : ObservableObject
     partial void OnExecutablePathChanged(string value)
     {
         OnPropertyChanged(nameof(ProcessDetailsTooltip));
+    }
+
+    partial void OnCurrentPreferenceKindChanged(GpuPreferenceKind value)
+    {
+        CurrentPreference = LocalizePreference(value);
+    }
+
+    public void RefreshLocalizedText()
+    {
+        CurrentPreference = LocalizePreference(CurrentPreferenceKind);
+    }
+
+    private static string LocalizePreference(GpuPreferenceKind preference)
+    {
+        return preference switch
+        {
+            GpuPreferenceKind.SystemDefault => AppLocalizer.Current.Get("PreferenceSystemDefault"),
+            GpuPreferenceKind.PowerSaving => AppLocalizer.Current.Get("PreferencePowerSaving"),
+            GpuPreferenceKind.HighPerformance => AppLocalizer.Current.Get("PreferenceHighPerformance"),
+            _ => AppLocalizer.Current.Get("PreferenceUnknown"),
+        };
     }
 }

@@ -2,7 +2,36 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="GpuOptimizer.App.App"
              xmlns:local="using:GpuOptimizer.App"
-             RequestedThemeVariant="Light">
+             RequestedThemeVariant="Default">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppTextBrush" Color="#1F2937" />
+                    <SolidColorBrush x:Key="AppMutedTextBrush" Color="#6B7280" />
+                    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#374151" />
+                    <SolidColorBrush x:Key="AppSeparatorTextBrush" Color="#9CA3AF" />
+                    <SolidColorBrush x:Key="AppPanelBackgroundBrush" Color="#F8FAFC" />
+                    <SolidColorBrush x:Key="AppPanelBorderBrush" Color="#E5E7EB" />
+                    <SolidColorBrush x:Key="AppInfoBackgroundBrush" Color="#EFF6FF" />
+                    <SolidColorBrush x:Key="AppInfoBorderBrush" Color="#BFDBFE" />
+                    <SolidColorBrush x:Key="AppInfoTextBrush" Color="#1E3A8A" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppTextBrush" Color="#E5E7EB" />
+                    <SolidColorBrush x:Key="AppMutedTextBrush" Color="#9CA3AF" />
+                    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#D1D5DB" />
+                    <SolidColorBrush x:Key="AppSeparatorTextBrush" Color="#6B7280" />
+                    <SolidColorBrush x:Key="AppPanelBackgroundBrush" Color="#111827" />
+                    <SolidColorBrush x:Key="AppPanelBorderBrush" Color="#374151" />
+                    <SolidColorBrush x:Key="AppInfoBackgroundBrush" Color="#0F172A" />
+                    <SolidColorBrush x:Key="AppInfoBorderBrush" Color="#1D4ED8" />
+                    <SolidColorBrush x:Key="AppInfoTextBrush" Color="#BFDBFE" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator/>

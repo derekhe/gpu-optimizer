@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GpuOptimizer.App.Localization;
 using GpuOptimizer.Core.Models;
 using GpuOptimizer.Core.Scanning;
 using GpuOptimizer.Core.Services;
@@ -20,20 +21,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<GpuProcessRowViewModel> Processes { get; } = [];
     public ObservableCollection<GpuMemorySummaryViewModel> GpuMemorySummaries { get; } = [];
+    public IReadOnlyList<LanguageOption> Languages { get; } = AppLocalizer.Current.Languages;
 
     [ObservableProperty]
     private bool isBusy;
 
     [ObservableProperty]
-    private string statusMessage = "Ready";
+    private string statusMessage = AppLocalizer.Current.Get("ReadyStatus");
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayTotalProcesses))]
     private int totalProcessCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplaySelectedProcesses))]
     private int selectedProcessCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayOptimizableProcesses))]
     private int optimizableProcessCount;
 
     [ObservableProperty]
@@ -43,7 +48,14 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(DisplaySelectedSaving))]
     private double selectedDiscreteMemoryMb;
 
-    public string DisplaySelectedSaving => $"Selected saving: {SelectedDiscreteMemoryMb:F1} MB";
+    [ObservableProperty]
+    private LanguageOption selectedLanguage = AppLocalizer.Current.Languages
+        .First(language => language.Code == AppLocalizer.Current.CurrentLanguageCode);
+
+    public string DisplayTotalProcesses => $"{TotalProcessCount} {AppLocalizer.Current.Get("ProcessesSuffix")}";
+    public string DisplaySelectedProcesses => $"{SelectedProcessCount} {AppLocalizer.Current.Get("SelectedSuffix")}";
+    public string DisplayOptimizableProcesses => $"{OptimizableProcessCount} {AppLocalizer.Current.Get("OptimizableSuffix")}";
+    public string DisplaySelectedSaving => $"{AppLocalizer.Current.Get("SelectedSavingPrefix")}: {SelectedDiscreteMemoryMb:F1} MB";
 
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand OptimizeSelectedCommand { get; }
@@ -60,7 +72,29 @@ public partial class MainWindowViewModel : ViewModelBase
         RestoreSelectedCommand = new AsyncRelayCommand(RestoreSelectedAsync, () => !IsBusy);
         SelectAllOptimizableCommand = new RelayCommand(SelectAllOptimizable);
 
+        AppLocalizer.Current.LanguageChanged += OnLanguageChanged;
         _ = RefreshAsync();
+    }
+
+    partial void OnSelectedLanguageChanged(LanguageOption value)
+    {
+        AppLocalizer.Current.SetLanguage(value.Code);
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        StatusMessage = AppLocalizer.Current.Get("ReadyStatus");
+        OnPropertyChanged(nameof(DisplayTotalProcesses));
+        OnPropertyChanged(nameof(DisplaySelectedProcesses));
+        OnPropertyChanged(nameof(DisplayOptimizableProcesses));
+        OnPropertyChanged(nameof(DisplaySelectedSaving));
+
+        foreach (var process in Processes)
+        {
+            process.RefreshLocalizedText();
+        }
+
+        RebuildGpuMemorySummaries();
     }
 
     private async Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -71,16 +105,16 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         SetBusyState(true);
-        StatusMessage = "Refreshing GPU usage...";
+        StatusMessage = AppLocalizer.Current.Get("RefreshingStatus");
 
         try
         {
             await ReloadProcessesAsync(cancellationToken);
-            StatusMessage = $"Refreshed at {DateTime.Now:HH:mm:ss} ({Processes.Count} processes)";
+            StatusMessage = AppLocalizer.Current.Format("RefreshedStatusFormat", DateTime.Now, Processes.Count);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Refresh failed: {ex.Message}";
+            StatusMessage = $"{AppLocalizer.Current.Get("RefreshFailedPrefix")}: {ex.Message}";
         }
         finally
         {
@@ -121,9 +155,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 DedicatedMemoryMb = process.DedicatedMemoryMb,
                 AdapterMemoryUsage = process.AdapterMemoryUsage,
                 SharedMemoryMb = process.SharedMemoryMb,
-                CurrentPreference = process.IsOptimizable && preferenceByPath.TryGetValue(process.ExecutablePath, out var preference)
-                    ? preference.ToString()
-                    : GpuPreferenceKind.Unknown.ToString(),
+                CurrentPreferenceKind = process.IsOptimizable && preferenceByPath.TryGetValue(process.ExecutablePath, out var preference)
+                    ? preference
+                    : GpuPreferenceKind.Unknown,
                 IsOptimizable = process.IsOptimizable,
                 Status = process.Status
             };
@@ -220,12 +254,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (selectedPaths.Length == 0)
         {
-            StatusMessage = "No selected, optimizable process found.";
+            StatusMessage = AppLocalizer.Current.Get("NoSelectionStatus");
             return;
         }
 
         SetBusyState(true);
-        StatusMessage = "Applying power-saving preference...";
+        StatusMessage = AppLocalizer.Current.Get("ApplyingStatus");
 
         try
         {
@@ -233,12 +267,12 @@ public partial class MainWindowViewModel : ViewModelBase
             await ReloadProcessesAsync(cancellationToken);
             ApplyOperationMessages(result.Items);
             StatusMessage = result.AllSucceeded
-                ? "Optimization applied. Please restart target applications."
-                : "Optimization had errors. Check row status messages.";
+                ? AppLocalizer.Current.Get("OptimizationAppliedStatus")
+                : AppLocalizer.Current.Get("OptimizationHadErrorsStatus");
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Optimization failed: {ex.Message}";
+            StatusMessage = $"{AppLocalizer.Current.Get("OptimizationFailedPrefix")}: {ex.Message}";
         }
         finally
         {
@@ -256,12 +290,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (selectedPaths.Length == 0)
         {
-            StatusMessage = "No selected, optimizable process found.";
+            StatusMessage = AppLocalizer.Current.Get("NoSelectionStatus");
             return;
         }
 
         SetBusyState(true);
-        StatusMessage = "Restoring original preferences...";
+        StatusMessage = AppLocalizer.Current.Get("RestoringStatus");
 
         try
         {
@@ -269,12 +303,12 @@ public partial class MainWindowViewModel : ViewModelBase
             await ReloadProcessesAsync(cancellationToken);
             ApplyOperationMessages(result.Items);
             StatusMessage = result.AllSucceeded
-                ? "Restore completed."
-                : "Restore had errors. Check row status messages.";
+                ? AppLocalizer.Current.Get("RestoreCompletedStatus")
+                : AppLocalizer.Current.Get("RestoreHadErrorsStatus");
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Restore failed: {ex.Message}";
+            StatusMessage = $"{AppLocalizer.Current.Get("RestoreFailedPrefix")}: {ex.Message}";
         }
         finally
         {

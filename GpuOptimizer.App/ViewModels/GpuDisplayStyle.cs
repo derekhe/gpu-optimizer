@@ -1,4 +1,5 @@
 using System;
+using GpuOptimizer.App.Localization;
 
 namespace GpuOptimizer.App.ViewModels;
 
@@ -19,15 +20,15 @@ internal static class GpuDisplayStyle
     {
         if (IsIntegratedGpu(gpuName))
         {
-            return "Power-saving target";
+            return AppLocalizer.Current.Get("PowerSavingTarget");
         }
 
         if (IsDiscreteGpu(gpuName))
         {
-            return "Potential saving pool";
+            return AppLocalizer.Current.Get("PotentialSavingPool");
         }
 
-        return "GPU memory";
+        return AppLocalizer.Current.Get("GpuMemoryKind");
     }
 
     public static string GetAccentBrush(string gpuName)
@@ -49,12 +50,12 @@ internal static class GpuDisplayStyle
     {
         if (IsIntegratedGpu(gpuName))
         {
-            return "#ECFDF5";
+            return "#22059669";
         }
 
         if (IsDiscreteGpu(gpuName))
         {
-            return "#FFF7ED";
+            return "#22EA580C";
         }
 
         return "#F9FAFB";
@@ -64,12 +65,12 @@ internal static class GpuDisplayStyle
     {
         if (IsIntegratedGpu(gpuName))
         {
-            return "#A7F3D0";
+            return "#66059669";
         }
 
         if (IsDiscreteGpu(gpuName))
         {
-            return "#FED7AA";
+            return "#66EA580C";
         }
 
         return "#E5E7EB";

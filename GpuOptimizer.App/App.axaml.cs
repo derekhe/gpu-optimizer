@@ -6,6 +6,7 @@ using System.Linq;
 using Avalonia.Markup.Xaml;
 using GpuOptimizer.Core.Scanning;
 using GpuOptimizer.Core.Services;
+using GpuOptimizer.App.Localization;
 using GpuOptimizer.App.ViewModels;
 using GpuOptimizer.App.Views;
 
@@ -16,6 +17,7 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        AppLocalizer.Current.Initialize();
     }
 
     public override void OnFrameworkInitializationCompleted()
