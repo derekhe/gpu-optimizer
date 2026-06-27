@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="GpuOptimizer.App/GpuOptimizer.App.csproj" />
+  <Project Path="GpuOptimizer.Core/GpuOptimizer.Core.csproj" />
+  <Project Path="GpuOptimizer.Core.Tests/GpuOptimizer.Core.Tests.csproj" />
+</Solution>

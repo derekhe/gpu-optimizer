@@ -1,0 +1,132 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GpuOptimizer.App.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+        x:Class="GpuOptimizer.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Width="1120"
+        Height="720"
+        MinWidth="960"
+        MinHeight="600"
+        Title="GPU Optimizer">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16">
+        <Border Grid.Row="0"
+                BorderBrush="#D9DCE1"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="12"
+                Background="#F8FAFC">
+            <StackPanel Spacing="4">
+                <TextBlock Text="GPU Optimizer"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="#1F2937" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontSize="12"
+                           Foreground="#4B5563"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0 10 0 0">
+            <Button Content="Refresh"
+                    Width="90"
+                    Height="32"
+                    Command="{Binding RefreshCommand}" />
+            <ToggleButton Content="Auto"
+                          Width="74"
+                          Height="32"
+                          IsChecked="{Binding IsAutoRefreshEnabled}" />
+            <Button Content="Select"
+                    Width="84"
+                    Height="32"
+                    Command="{Binding SelectAllOptimizableCommand}" />
+            <Button Content="Optimize"
+                    Width="92"
+                    Height="32"
+                    Command="{Binding OptimizeSelectedCommand}" />
+            <Button Content="Restore"
+                    Width="92"
+                    Height="32"
+                    Command="{Binding RestoreSelectedCommand}" />
+        </StackPanel>
+
+        <UniformGrid Grid.Row="2"
+                     Columns="5"
+                     Margin="0 10 0 0"
+                     HorizontalAlignment="Stretch">
+            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Total" FontSize="11" Foreground="#6B7280" />
+                    <TextBlock Text="{Binding TotalProcessCount}" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Selected" FontSize="11" Foreground="#6B7280" />
+                    <TextBlock Text="{Binding SelectedProcessCount}" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Optimizable" FontSize="11" Foreground="#6B7280" />
+                    <TextBlock Text="{Binding OptimizableProcessCount}" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0 0 8 0">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Dedicated MB" FontSize="11" Foreground="#6B7280" />
+                    <TextBlock Text="{Binding TotalDedicatedMemoryMb, StringFormat={}{0:F1}}" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="10">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Shared MB" FontSize="11" Foreground="#6B7280" />
+                    <TextBlock Text="{Binding TotalSharedMemoryMb, StringFormat={}{0:F1}}" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <DataGrid Grid.Row="3"
+                  ItemsSource="{Binding Processes}"
+                  AutoGenerateColumns="False"
+                  SelectionMode="Extended"
+                  CanUserSortColumns="True"
+                  IsReadOnly="False"
+                  GridLinesVisibility="Vertical"
+                  HeadersVisibility="Column"
+                  RowHeight="30"
+                  HorizontalAlignment="Stretch"
+                  Margin="0 10 0 0"
+                  BorderThickness="1"
+                  CornerRadius="0 0 6 6">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Select" Width="72">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsSelected}" HorizontalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Process Name" Binding="{Binding ProcessName}" Width="1.4*" />
+                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="90" />
+                <DataGridTextColumn Header="Exe Path" Binding="{Binding ExecutablePath}" Width="3*" />
+                <DataGridTextColumn Header="GPU" Binding="{Binding GpuAdapters}" Width="130" />
+                <DataGridTextColumn Header="GPU Utilization" Binding="{Binding GpuUtilizationPercent, StringFormat={}{0:F1}%}" Width="130" />
+                <DataGridTextColumn Header="Dedicated" Binding="{Binding DedicatedMemoryMb, StringFormat={}{0:F1}}" Width="130" />
+                <DataGridTextColumn Header="Shared" Binding="{Binding SharedMemoryMb, StringFormat={}{0:F1}}" Width="130" />
+                <DataGridTextColumn Header="Preference" Binding="{Binding CurrentPreference}" Width="120" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+
+</Window>
