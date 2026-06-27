@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
         x:Class="GpuOptimizer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/app-icon.ico"
         Width="1120"
         Height="720"
         MinWidth="960"
@@ -48,6 +48,11 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <Button Content="{DynamicResource CheckUpdatesButton}"
+                        Height="28"
+                        Padding="10 0"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding CheckForUpdatesCommand}" />
             </StackPanel>
         </Grid>
 
@@ -92,6 +97,17 @@
                         Padding="12 1 12 3"
                         VerticalContentAlignment="Center"
                         Command="{Binding RestoreSelectedCommand}" />
+                <TextBlock Text="{Binding UpdateMessage}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppMutedTextBrush}"
+                           VerticalAlignment="Center"
+                           Margin="6 0 0 0" />
+                <Button Content="{DynamicResource OpenReleaseButton}"
+                        Height="30"
+                        Padding="10 1 10 3"
+                        VerticalContentAlignment="Center"
+                        IsVisible="{Binding IsUpdateAvailable}"
+                        Command="{Binding OpenLatestReleaseCommand}" />
             </StackPanel>
 
             <StackPanel Grid.Column="1"

@@ -1,0 +1,49 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="28" x2="224" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset="0.48" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="core" x1="72" y1="70" x2="184" y2="186" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DBEAFE"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="115" y1="103" x2="189" y2="166" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="shadow" x="18" y="18" width="220" height="220" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <g filter="url(#shadow)">
+    <rect x="58" y="58" width="140" height="140" rx="28" fill="#0F172A" fill-opacity="0.88"/>
+    <rect x="74" y="74" width="108" height="108" rx="22" fill="url(#core)"/>
+    <rect x="89" y="89" width="78" height="78" rx="16" fill="#0F172A" fill-opacity="0.88"/>
+    <path d="M125 145C143 143 158 134 169 117C170 140 158 159 134 168C125 171 113 173 101 172C104 159 112 150 125 145Z" fill="url(#leaf)"/>
+    <path d="M105 168C122 157 143 143 166 118" stroke="#D1FAE5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M113 89L97 127H125L109 167L158 111H129L145 89H113Z" fill="#F97316"/>
+  </g>
+
+  <g stroke="#E0F2FE" stroke-opacity="0.85" stroke-width="10" stroke-linecap="round">
+    <path d="M72 39V22"/>
+    <path d="M104 39V22"/>
+    <path d="M136 39V22"/>
+    <path d="M168 39V22"/>
+    <path d="M72 234V217"/>
+    <path d="M104 234V217"/>
+    <path d="M136 234V217"/>
+    <path d="M168 234V217"/>
+    <path d="M39 72H22"/>
+    <path d="M39 104H22"/>
+    <path d="M39 136H22"/>
+    <path d="M39 168H22"/>
+    <path d="M234 72H217"/>
+    <path d="M234 104H217"/>
+    <path d="M234 136H217"/>
+    <path d="M234 168H217"/>
+  </g>
+</svg>

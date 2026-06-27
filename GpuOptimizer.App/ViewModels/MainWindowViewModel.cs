@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GpuOptimizer.App.Localization;
+using GpuOptimizer.App.Services;
 using GpuOptimizer.Core.Models;
 using GpuOptimizer.Core.Scanning;
 using GpuOptimizer.Core.Services;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +20,9 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IGpuScannerService _gpuScannerService;
     private readonly IGpuPreferenceService _gpuPreferenceService;
+    private readonly GitHubReleaseUpdateChecker _updateChecker;
+    private UpdateCheckResult? _lastUpdateCheckResult;
+    private string? _lastUpdateCheckError;
 
     public ObservableCollection<GpuProcessRowViewModel> Processes { get; } = [];
     public ObservableCollection<GpuMemorySummaryViewModel> GpuMemorySummaries { get; } = [];
@@ -25,6 +30,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool isBusy;
+
+    [ObservableProperty]
+    private bool isCheckingUpdates;
 
     [ObservableProperty]
     private string statusMessage = AppLocalizer.Current.Get("ReadyStatus");
@@ -52,6 +60,15 @@ public partial class MainWindowViewModel : ViewModelBase
     private LanguageOption selectedLanguage = AppLocalizer.Current.Languages
         .First(language => language.Code == AppLocalizer.Current.CurrentLanguageCode);
 
+    [ObservableProperty]
+    private string updateMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool isUpdateAvailable;
+
+    [ObservableProperty]
+    private string latestReleaseUrl = string.Empty;
+
     public string DisplayTotalProcesses => $"{TotalProcessCount} {AppLocalizer.Current.Get("ProcessesSuffix")}";
     public string DisplaySelectedProcesses => $"{SelectedProcessCount} {AppLocalizer.Current.Get("SelectedSuffix")}";
     public string DisplayOptimizableProcesses => $"{OptimizableProcessCount} {AppLocalizer.Current.Get("OptimizableSuffix")}";
@@ -60,25 +77,39 @@ public partial class MainWindowViewModel : ViewModelBase
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand OptimizeSelectedCommand { get; }
     public IAsyncRelayCommand RestoreSelectedCommand { get; }
+    public IAsyncRelayCommand CheckForUpdatesCommand { get; }
+    public IRelayCommand OpenLatestReleaseCommand { get; }
     public IRelayCommand SelectAllOptimizableCommand { get; }
 
-    public MainWindowViewModel(IGpuScannerService gpuScannerService, IGpuPreferenceService gpuPreferenceService)
+    public MainWindowViewModel(
+        IGpuScannerService gpuScannerService,
+        IGpuPreferenceService gpuPreferenceService,
+        GitHubReleaseUpdateChecker? updateChecker = null)
     {
         _gpuScannerService = gpuScannerService;
         _gpuPreferenceService = gpuPreferenceService;
+        _updateChecker = updateChecker ?? new GitHubReleaseUpdateChecker();
 
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => !IsBusy);
         OptimizeSelectedCommand = new AsyncRelayCommand(OptimizeSelectedAsync, () => !IsBusy);
         RestoreSelectedCommand = new AsyncRelayCommand(RestoreSelectedAsync, () => !IsBusy);
+        CheckForUpdatesCommand = new AsyncRelayCommand(CheckForUpdatesAsync, () => !IsCheckingUpdates);
+        OpenLatestReleaseCommand = new RelayCommand(OpenLatestRelease, () => !string.IsNullOrWhiteSpace(LatestReleaseUrl));
         SelectAllOptimizableCommand = new RelayCommand(SelectAllOptimizable);
 
         AppLocalizer.Current.LanguageChanged += OnLanguageChanged;
         _ = RefreshAsync();
+        _ = CheckForUpdatesAsync();
     }
 
     partial void OnSelectedLanguageChanged(LanguageOption value)
     {
         AppLocalizer.Current.SetLanguage(value.Code);
+    }
+
+    partial void OnIsCheckingUpdatesChanged(bool value)
+    {
+        CheckForUpdatesCommand.NotifyCanExecuteChanged();
     }
 
     private void OnLanguageChanged(object? sender, EventArgs e)
@@ -88,6 +119,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(DisplaySelectedProcesses));
         OnPropertyChanged(nameof(DisplayOptimizableProcesses));
         OnPropertyChanged(nameof(DisplaySelectedSaving));
+        RefreshUpdateMessage();
 
         foreach (var process in Processes)
         {
@@ -185,6 +217,72 @@ public partial class MainWindowViewModel : ViewModelBase
         UpdateSummary();
         OptimizeSelectedCommand.NotifyCanExecuteChanged();
         RestoreSelectedCommand.NotifyCanExecuteChanged();
+        CheckForUpdatesCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task CheckForUpdatesAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsCheckingUpdates)
+        {
+            return;
+        }
+
+        IsCheckingUpdates = true;
+        UpdateMessage = AppLocalizer.Current.Get("CheckingUpdatesStatus");
+
+        try
+        {
+            var result = await _updateChecker.CheckAsync(cancellationToken);
+            _lastUpdateCheckResult = result;
+            _lastUpdateCheckError = null;
+            IsUpdateAvailable = result.IsUpdateAvailable;
+            LatestReleaseUrl = result.ReleaseUrl;
+            RefreshUpdateMessage();
+            OpenLatestReleaseCommand.NotifyCanExecuteChanged();
+        }
+        catch (Exception ex)
+        {
+            _lastUpdateCheckResult = null;
+            _lastUpdateCheckError = ex.Message;
+            IsUpdateAvailable = false;
+            LatestReleaseUrl = string.Empty;
+            RefreshUpdateMessage();
+            OpenLatestReleaseCommand.NotifyCanExecuteChanged();
+        }
+        finally
+        {
+            IsCheckingUpdates = false;
+        }
+    }
+
+    private void RefreshUpdateMessage()
+    {
+        if (_lastUpdateCheckResult is not null)
+        {
+            UpdateMessage = _lastUpdateCheckResult.IsUpdateAvailable
+                ? AppLocalizer.Current.Format("UpdateAvailableFormat", _lastUpdateCheckResult.LatestTag, _lastUpdateCheckResult.CurrentVersion)
+                : AppLocalizer.Current.Format("NoUpdateAvailableFormat", _lastUpdateCheckResult.CurrentVersion);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_lastUpdateCheckError))
+        {
+            UpdateMessage = $"{AppLocalizer.Current.Get("UpdateCheckFailedPrefix")}: {_lastUpdateCheckError}";
+        }
+    }
+
+    private void OpenLatestRelease()
+    {
+        if (string.IsNullOrWhiteSpace(LatestReleaseUrl))
+        {
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = LatestReleaseUrl,
+            UseShellExecute = true
+        });
     }
 
     private void SetBusyState(bool value)
