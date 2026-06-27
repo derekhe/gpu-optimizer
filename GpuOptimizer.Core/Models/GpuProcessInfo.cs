@@ -19,6 +19,7 @@ public sealed class GpuProcessInfo
     public string GpuEngines { get; init; } = "N/A";
     public double GpuUtilizationPercent { get; init; }
     public double DedicatedMemoryMb { get; init; }
+    public IReadOnlyList<GpuAdapterMemoryUsage> AdapterMemoryUsage { get; init; } = [];
     public double SharedMemoryMb { get; init; }
     public GpuPreferenceKind CurrentPreference { get; init; } = GpuPreferenceKind.Unknown;
     public bool IsOptimizable { get; init; }
@@ -28,3 +29,5 @@ public sealed class GpuProcessInfo
     public override string ToString() =>
         $"{ProcessName} ({ProcessId})";
 }
+
+public sealed record GpuAdapterMemoryUsage(string AdapterName, double DedicatedMemoryMb);

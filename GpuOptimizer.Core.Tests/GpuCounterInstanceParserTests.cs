@@ -65,4 +65,13 @@ public class GpuCounterInstanceParserTests
         Assert.False(result);
         Assert.Equal(string.Empty, adapterKey);
     }
+
+    [Theory]
+    [InlineData(0, 0x00019666u, "0x00000000_0x00019666")]
+    [InlineData(-1, 0xabcdef01u, "0xffffffff_0xabcdef01")]
+    public void FormatAdapterKey_FormatsDxgiLuidLikeCounterInstances(int highPart, uint lowPart, string expectedKey)
+    {
+        var adapterKey = GpuCounterInstanceParser.FormatAdapterKey(highPart, lowPart);
+        Assert.Equal(expectedKey, adapterKey);
+    }
 }

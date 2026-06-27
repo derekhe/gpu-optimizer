@@ -55,4 +55,9 @@ internal static class GpuCounterInstanceParser
         adapterKey = string.Empty;
         return false;
     }
+
+    public static string FormatAdapterKey(int highPart, uint lowPart)
+    {
+        return $"0x{unchecked((uint)highPart):x8}_0x{lowPart:x8}";
+    }
 }

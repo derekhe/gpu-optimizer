@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using GpuOptimizer.Core.Models;
+using System.Collections.Generic;
 
 namespace GpuOptimizer.App.ViewModels;
 
@@ -17,6 +18,11 @@ public partial class GpuProcessRowViewModel : ObservableObject
     [ObservableProperty]
     private string executablePath = string.Empty;
 
+    public string ProcessDetailsTooltip =>
+        string.IsNullOrWhiteSpace(ExecutablePath)
+            ? $"PID: {ProcessId}\nPath: unavailable"
+            : $"PID: {ProcessId}\nPath: {ExecutablePath}";
+
     [ObservableProperty]
     private string gpuAdapters = string.Empty;
 
@@ -29,6 +35,8 @@ public partial class GpuProcessRowViewModel : ObservableObject
     [ObservableProperty]
     private double dedicatedMemoryMb;
 
+    public IReadOnlyList<GpuAdapterMemoryUsage> AdapterMemoryUsage { get; init; } = [];
+
     [ObservableProperty]
     private double sharedMemoryMb;
 
@@ -40,4 +48,22 @@ public partial class GpuProcessRowViewModel : ObservableObject
 
     [ObservableProperty]
     private string status = string.Empty;
+
+    partial void OnIsOptimizableChanged(bool value)
+    {
+        if (!value)
+        {
+            IsSelected = false;
+        }
+    }
+
+    partial void OnProcessIdChanged(int value)
+    {
+        OnPropertyChanged(nameof(ProcessDetailsTooltip));
+    }
+
+    partial void OnExecutablePathChanged(string value)
+    {
+        OnPropertyChanged(nameof(ProcessDetailsTooltip));
+    }
 }

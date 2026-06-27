@@ -15,6 +15,7 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
     private const string EngineUtilizationCounter = "Utilization Percentage";
     private const string DedicatedUsageCounter = "Dedicated Usage";
     private const string SharedUsageCounter = "Shared Usage";
+    private const string UnknownAdapterLabel = "Other GPU";
     public Task<IReadOnlyList<GpuProcessInfo>> ScanAsync(CancellationToken cancellationToken = default)
     {
         return Task.Run(() => Scan(), cancellationToken);
@@ -142,10 +143,12 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
             }
 
             var accumulator = GetOrCreate(stats, pid);
-            accumulator.GpuAdapters.Add(ResolveAdapterLabel(instance, adapterLabels));
+            var adapterLabel = ResolveAdapterLabel(instance, adapterLabels);
+            accumulator.GpuAdapters.Add(adapterLabel);
             if (dedicated is not null)
             {
                 accumulator.DedicatedMemoryBytes += dedicated.Value;
+                accumulator.AddDedicatedMemory(adapterLabel, dedicated.Value);
             }
 
             if (shared is not null)
@@ -157,26 +160,7 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
 
     private static IReadOnlyDictionary<string, string> BuildAdapterLabelMap()
     {
-        var labels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!PerformanceCounterCategoryExists("GPU Adapter Memory"))
-        {
-            return labels;
-        }
-
-        var index = 0;
-        foreach (var instance in GetCounterInstances("GPU Adapter Memory").OrderBy(value => value, StringComparer.OrdinalIgnoreCase))
-        {
-            if (!GpuCounterInstanceParser.TryGetAdapterKeyFromInstance(instance, out var adapterKey) ||
-                labels.ContainsKey(adapterKey))
-            {
-                continue;
-            }
-
-            labels[adapterKey] = $"GPU {index}";
-            index++;
-        }
-
-        return labels;
+        return DxgiGpuAdapterEnumerator.GetHardwareAdapterLabels();
     }
 
     private static string ResolveAdapterLabel(string instanceName, IReadOnlyDictionary<string, string> adapterLabels)
@@ -187,7 +171,7 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
             return label;
         }
 
-        return "GPU ?";
+        return UnknownAdapterLabel;
     }
 
     private static List<string> GetCounterInstances(string categoryName)
@@ -249,20 +233,39 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
     {
         var (processName, executablePath, status) = ResolveProcessMetadata(processId);
         var isOptimizable = !string.IsNullOrWhiteSpace(executablePath);
+        var displayAdapters = stats.GpuAdapters
+            .Where(IsDisplayAdapter)
+            .OrderBy(value => value)
+            .ToList();
 
         return new GpuProcessInfo
         {
             ProcessId = processId,
             ProcessName = processName,
             ExecutablePath = executablePath,
-            GpuAdapters = stats.GpuAdapters.Count > 0 ? string.Join(", ", stats.GpuAdapters.OrderBy(value => value)) : "Unknown",
+            GpuAdapters = displayAdapters.Count > 0 ? string.Join(", ", displayAdapters) : "Unknown",
             GpuEngines = stats.Engines.Count > 0 ? string.Join(", ", stats.Engines.OrderBy(value => value)) : "Unknown",
             GpuUtilizationPercent = stats.UtilizationPercent,
             DedicatedMemoryMb = stats.DedicatedMemoryBytes / 1024d / 1024d,
+            AdapterMemoryUsage = stats.DedicatedMemoryBytesByAdapter
+                .Where(item => IsDisplayAdapter(item.Key))
+                .OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(item => new GpuAdapterMemoryUsage(item.Key, BytesToMegabytes(item.Value)))
+                .ToList(),
             SharedMemoryMb = stats.SharedMemoryBytes / 1024d / 1024d,
             IsOptimizable = isOptimizable,
             Status = status
         };
+    }
+
+    private static bool IsDisplayAdapter(string adapterLabel)
+    {
+        return !adapterLabel.Equals(UnknownAdapterLabel, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static double BytesToMegabytes(double bytes)
+    {
+        return bytes / 1024d / 1024d;
     }
 
     private static (string ProcessName, string ExecutablePath, string Status) ResolveProcessMetadata(int processId)
@@ -283,7 +286,21 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
 
             if (string.IsNullOrWhiteSpace(executablePath))
             {
-                return (processName, string.Empty, "No executable path access");
+                executablePath = NativeProcessPathResolver.ResolveExecutablePath(processId);
+            }
+
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                executablePath = SystemExecutablePathResolver.ResolveExecutablePath(processName);
+            }
+
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                executablePath = PackagedAppPathResolver.ResolveExecutablePath(processName);
+                if (string.IsNullOrWhiteSpace(executablePath))
+                {
+                    return (processName, string.Empty, "No executable path access");
+                }
             }
 
             return (processName, executablePath, string.Empty);
@@ -303,8 +320,15 @@ public sealed class WindowsPerformanceCounterGpuScanner : IGpuScannerService
         public double UtilizationPercent { get; set; }
         public double DedicatedMemoryBytes { get; set; }
         public double SharedMemoryBytes { get; set; }
+        public Dictionary<string, double> DedicatedMemoryBytesByAdapter { get; } = new(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> GpuAdapters { get; } = new(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> Engines { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public void AddDedicatedMemory(string adapterLabel, double bytes)
+        {
+            DedicatedMemoryBytesByAdapter.TryGetValue(adapterLabel, out var current);
+            DedicatedMemoryBytesByAdapter[adapterLabel] = current + bytes;
+        }
     }
 
     private sealed record EngineCounterSample(

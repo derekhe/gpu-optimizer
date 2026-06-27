@@ -1,4 +1,3 @@
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GpuOptimizer.Core.Models;
@@ -18,12 +17,9 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IGpuScannerService _gpuScannerService;
     private readonly IGpuPreferenceService _gpuPreferenceService;
-    private readonly DispatcherTimer _autoRefreshTimer;
 
     public ObservableCollection<GpuProcessRowViewModel> Processes { get; } = [];
-
-    [ObservableProperty]
-    private bool isAutoRefreshEnabled;
+    public ObservableCollection<GpuMemorySummaryViewModel> GpuMemorySummaries { get; } = [];
 
     [ObservableProperty]
     private bool isBusy;
@@ -43,9 +39,6 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private double totalDedicatedMemoryMb;
 
-    [ObservableProperty]
-    private double totalSharedMemoryMb;
-
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand OptimizeSelectedCommand { get; }
     public IAsyncRelayCommand RestoreSelectedCommand { get; }
@@ -61,30 +54,7 @@ public partial class MainWindowViewModel : ViewModelBase
         RestoreSelectedCommand = new AsyncRelayCommand(RestoreSelectedAsync, () => !IsBusy);
         SelectAllOptimizableCommand = new RelayCommand(SelectAllOptimizable);
 
-        _autoRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
-        _autoRefreshTimer.Tick += async (_, __) =>
-        {
-            if (!IsAutoRefreshEnabled || IsBusy)
-            {
-                return;
-            }
-
-            await RefreshAsync();
-        };
-
         _ = RefreshAsync();
-    }
-
-    partial void OnIsAutoRefreshEnabledChanged(bool value)
-    {
-        if (value)
-        {
-            _autoRefreshTimer.Start();
-            _ = RefreshAsync();
-            return;
-        }
-
-        _autoRefreshTimer.Stop();
     }
 
     private async Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -114,7 +84,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private async Task ReloadProcessesAsync(CancellationToken cancellationToken)
     {
-        var processes = await _gpuScannerService.ScanAsync(cancellationToken);
+        var processes = (await _gpuScannerService.ScanAsync(cancellationToken))
+            .Where(ShouldDisplayProcess)
+            .ToList();
         var processPaths = processes
             .Where(process => process.IsOptimizable)
             .Select(process => process.ExecutablePath)
@@ -141,6 +113,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 GpuEngines = process.GpuEngines,
                 GpuUtilizationPercent = process.GpuUtilizationPercent,
                 DedicatedMemoryMb = process.DedicatedMemoryMb,
+                AdapterMemoryUsage = process.AdapterMemoryUsage,
                 SharedMemoryMb = process.SharedMemoryMb,
                 CurrentPreference = process.IsOptimizable && preferenceByPath.TryGetValue(process.ExecutablePath, out var preference)
                     ? preference.ToString()
@@ -154,6 +127,12 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         UpdateSummary();
+    }
+
+    private static bool ShouldDisplayProcess(GpuProcessInfo process)
+    {
+        return process.IsAccessibleProcessPath &&
+            !process.GpuAdapters.Equals("Unknown", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -192,7 +171,28 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedProcessCount = Processes.Count(process => process.IsSelected);
         OptimizableProcessCount = Processes.Count(process => process.IsOptimizable);
         TotalDedicatedMemoryMb = Processes.Sum(process => process.DedicatedMemoryMb);
-        TotalSharedMemoryMb = Processes.Sum(process => process.SharedMemoryMb);
+        RebuildGpuMemorySummaries();
+    }
+
+    private void RebuildGpuMemorySummaries()
+    {
+        var summaries = Processes
+            .SelectMany(process => process.AdapterMemoryUsage)
+            .GroupBy(memory => memory.AdapterName, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new GpuMemorySummaryViewModel
+            {
+                GpuName = group.Key,
+                DedicatedMemoryMb = group.Sum(memory => memory.DedicatedMemoryMb)
+            })
+            .OrderByDescending(summary => summary.DedicatedMemoryMb)
+            .ThenBy(summary => summary.GpuName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        GpuMemorySummaries.Clear();
+        foreach (var summary in summaries)
+        {
+            GpuMemorySummaries.Add(summary);
+        }
     }
 
     private async Task OptimizeSelectedAsync(CancellationToken cancellationToken = default)
