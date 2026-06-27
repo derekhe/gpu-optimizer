@@ -1,9 +1,9 @@
 bin/
 obj/
-.vs/
-.vscode/
+artifacts/
+TestResults/
 *.user
 *.suo
-*.nupkg
-*.snupkg
-publish/
+*.userosscache
+*.sln.docstates
+.vs/
