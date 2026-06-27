@@ -66,11 +66,13 @@ Run the app:
 dotnet run --project GpuOptimizer.App
 ```
 
-Publish a Windows x64 self-contained build:
+Publish a Windows x64 self-contained single-file executable:
 
 ```powershell
-dotnet publish GpuOptimizer.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish GpuOptimizer.App -c Release
 ```
+
+The distributable executable is `GpuOptimizer.exe` in the publish directory. Native debug symbol files, if emitted by dependent packages, are not required for running the app.
 
 ## License
 
